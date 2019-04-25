@@ -1,7 +1,6 @@
 package com.jack.spike.dao;
 
 import com.jack.spike.model.User;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -13,8 +12,5 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface IUserDao {
     @Select("select * from user where id = #{id}")
-    User getUserById(@Param("id") int id);
-
-    @Insert("insert user (id,name) values(#{id},#{name})")
-    int insert(User user);
+    User getUserById(@Param("id") long id);
 }

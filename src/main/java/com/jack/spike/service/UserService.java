@@ -1,10 +1,20 @@
 package com.jack.spike.service;
 
 import com.jack.spike.dao.IUserDao;
+import com.jack.spike.exception.GlobalException;
 import com.jack.spike.model.User;
+import com.jack.spike.redis.RedisService;
+import com.jack.spike.redis.UserKey;
+import com.jack.spike.result.CodeMsg;
+import com.jack.spike.util.MD5Util;
+import com.jack.spike.util.UUIDUtil;
+import com.jack.spike.vo.LoginVo;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @Author Jack
@@ -15,22 +25,56 @@ public class UserService {
 
     @Autowired
     private IUserDao userDao;
+    @Autowired
+    private RedisService redisService;
 
-    public User getUserById(int id) {
+    public static final String COOKIE_NAME_TOKEN = "token";
+
+    public User getUserById(long id) {
         return userDao.getUserById(id);
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public boolean testTransaction() {
-        User user = new User();
-        user.setId(2);
-        user.setName("Rose");
-        userDao.insert(user);
-        User user1 = new User();
-        user1.setId(1);
-        user1.setName("Jack01");
-        userDao.insert(user1);
+
+    public boolean login(HttpServletResponse response, LoginVo loginVo) {
+        if (loginVo == null) {
+            throw new GlobalException(CodeMsg.SERVER_ERROR);
+        }
+        String mobile = loginVo.getMobile();
+        String formPass = loginVo.getPassword();
+        //判断手机号是否存在
+        User user = getUserById(Long.parseLong(mobile));
+        if (user == null) {
+            throw new GlobalException(CodeMsg.MOBILE_NOT_EXIST);
+        }
+        //验证密码
+        String dbPass = user.getPassword();
+        String saltDB = user.getSalt();
+        String calcPass = MD5Util.formPassToDBPass(formPass, saltDB);
+        if (!calcPass.equals(dbPass)) {
+            throw new GlobalException(CodeMsg.PASSWORD_ERROR);
+        }
+        //生成cookie
+        String token = UUIDUtil.uuid();
+        addCookie(response, token, user);
         return true;
     }
 
+    private void addCookie(HttpServletResponse response, String token, User user) {
+        redisService.set(UserKey.token, token, user);
+        Cookie cookie = new Cookie(COOKIE_NAME_TOKEN, token);
+        cookie.setMaxAge(UserKey.token.expireSeconds());
+        cookie.setPath("/");
+        response.addCookie(cookie);
+    }
+
+    public User getByToken(HttpServletResponse response, String token) {
+        if (StringUtils.isEmpty(token)) {
+            return null;
+        }
+        User user = redisService.get(UserKey.token, token, User.class);
+        if (user != null) {
+            addCookie(response, token, user);
+        }
+        return user;
+    }
 }
