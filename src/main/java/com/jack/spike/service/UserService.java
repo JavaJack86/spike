@@ -31,7 +31,17 @@ public class UserService {
     public static final String COOKIE_NAME_TOKEN = "token";
 
     public User getUserById(long id) {
-        return userDao.getUserById(id);
+        User user = redisService.get(UserKey.getById, "" + id, User.class);
+        if (user != null) {
+            return user;
+        }
+
+        user = userDao.getUserById(id);
+        if (user != null) {
+            redisService.set(UserKey.getById, "" + id, User.class);
+        }
+        //如果存在update User 的方法 需要注意：更改redis缓存信息 token 和 id
+        return user;
     }
 
 

@@ -1,6 +1,8 @@
 package com.jack.spike.service;
 
 import com.jack.spike.dao.IGoodsDao;
+import com.jack.spike.model.Goods;
+import com.jack.spike.model.SpikeGoods;
 import com.jack.spike.vo.GoodsVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,5 +25,12 @@ public class GoodsService {
 
     public GoodsVo getGoodsVoByGoodsId(long id) {
         return goodsDao.getGoodsVoByGoodsId(id);
+    }
+
+    public int reduceStock(GoodsVo goods) {
+        SpikeGoods spikeGoods = new SpikeGoods();
+        spikeGoods.setGoodsId(goods.getId());
+        spikeGoods.setStockCount(goods.getStockCount() - 1);
+        return goodsDao.reduceStock(spikeGoods);
     }
 }
