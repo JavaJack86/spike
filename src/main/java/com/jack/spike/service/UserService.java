@@ -38,7 +38,7 @@ public class UserService {
 
         user = userDao.getUserById(id);
         if (user != null) {
-            redisService.set(UserKey.getById, "" + id, User.class);
+            redisService.set(UserKey.getById, "" + id, user);
         }
         //如果存在update User 的方法 需要注意：更改redis缓存信息 token 和 id
         return user;

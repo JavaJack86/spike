@@ -26,7 +26,7 @@
             background:url('/img/bg2.jpg') no-repeat;
             background-size:100% 100%;
         }
-        #goodslist td{
+        #goodsList td{
             border-top:1px solid #39503f61;
         }
     </style>
@@ -34,7 +34,7 @@
 <body>
 <div class="panel panel-default"  style="height:100%;background-color:rgba(222,222,222,0.8)">
   <div class="panel-heading">秒杀订单详情</div>
-  <table class="table" id="goodslist">
+  <table class="table" id="goodsList">
         <tr>  
         <td>商品名称</td>  
         <td colspan="3" id="goodsName"></td> 
@@ -74,7 +74,7 @@
 <script>
 function render(detail){
 	var goods = detail.goods;
-	var orderInfo = detail.orderInfo;
+	var orderInfo = detail.order;
 	$("#goodsName").text(goods.goodsName);
 	$("#goodsImg").attr("src", goods.goodsImg);
 	$("#orderPrice").text(orderInfo.goodsPrice);
@@ -96,7 +96,7 @@ $(function(){
 function getOrderDetail(){
 	var orderId = g_getQueryString("orderId");
 	$.ajax({
-		url:"/orderInfo/detail",
+		url:"/order/detail",
 		type:"GET",
 		data:{
 			orderId:orderId
@@ -113,7 +113,5 @@ function getOrderDetail(){
 		}
 	});
 }
-
-
 
 </script>

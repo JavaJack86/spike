@@ -24,10 +24,10 @@ public class CodeMsg {
     //商品模块 5003XX
 
     //订单模块 5004XX
-
+    public static CodeMsg SPIKE_OVER = new CodeMsg(500401, "商品已经秒杀结束");
     //秒杀模块 5005XX
-    public static CodeMsg SPIKE_OVER = new CodeMsg(500525, "商品已经秒杀结束");
-    public static CodeMsg SPIKE_REPEATE = new CodeMsg(500526, "不能重复秒杀该商品");
+    public static CodeMsg Order_NOT_EXIST = new CodeMsg(500525, "订单不存在");
+    public static CodeMsg SPIKE_RAPEATE = new CodeMsg(500526, "不能重复秒杀该商品");
 
     private CodeMsg() {
     }

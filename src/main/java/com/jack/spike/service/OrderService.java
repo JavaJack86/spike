@@ -4,6 +4,8 @@ import com.jack.spike.dao.IOrderDao;
 import com.jack.spike.model.OrderInfo;
 import com.jack.spike.model.SpikeOrder;
 import com.jack.spike.model.User;
+import com.jack.spike.redis.OrderKey;
+import com.jack.spike.redis.RedisService;
 import com.jack.spike.vo.GoodsVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,10 +23,17 @@ public class OrderService {
 
     @Autowired
     private IOrderDao orderDao;
+    @Autowired
+    private RedisService redisService;
 
-    public OrderInfo getOrderInfoByUserIdAndGoodsId(long userId, long goodsId) {
-        return orderDao.getOrderInfoByUserIdAndGoodsId(userId, goodsId);
+    public SpikeOrder getSpikeOrderByUserIdAndGoodsId(long userId, long goodsId) {
+        return redisService.get(OrderKey.getSpikeOrderByUidGid, "" + userId + "_" + goodsId, SpikeOrder.class);
     }
+
+    public OrderInfo getOrderInfoByOrderId(long orderId) {
+        return orderDao.getOrderInfoByOrderId(orderId);
+    }
+
 
     @Transactional(rollbackFor = Exception.class)
     public OrderInfo createOrder(User user, GoodsVo goods) {
@@ -44,6 +53,7 @@ public class OrderService {
         spikeOrder.setUserId(user.getId());
         spikeOrder.setOrderId(orderId);
         orderDao.insertSpikeOrderInfo(spikeOrder);
+        redisService.set(OrderKey.getSpikeOrderByUidGid, "" + user.getId() + "_" + goods.getId(), spikeOrder);
         return orderInfo;
     }
 }

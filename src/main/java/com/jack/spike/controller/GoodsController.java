@@ -3,7 +3,9 @@ package com.jack.spike.controller;
 import com.jack.spike.model.User;
 import com.jack.spike.redis.GoodsKey;
 import com.jack.spike.redis.RedisService;
+import com.jack.spike.result.Result;
 import com.jack.spike.service.GoodsService;
+import com.jack.spike.vo.GoodsDetailVo;
 import com.jack.spike.vo.GoodsVo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,8 +58,8 @@ public class GoodsController {
         return html;
     }
 
-    @RequestMapping(value = "/to_detail/{goodsId}", produces = "text/html")
-    public String toDetail(HttpServletRequest request, HttpServletResponse response, Model model, User user, @PathVariable("goodsId") long id) {
+    @RequestMapping(value = "/to_detail2/{goodsId}", produces = "text/html")
+    public String toDetail2(HttpServletRequest request, HttpServletResponse response, Model model, User user, @PathVariable("goodsId") long id) {
         model.addAttribute("user", user);
         String html = redisService.get(GoodsKey.goodsDetail, "" + id, String.class);
         if (!StringUtils.isEmpty(html)) {
@@ -91,6 +93,34 @@ public class GoodsController {
             redisService.set(GoodsKey.goodsDetail, "" + id, html);
         }
         return html;
+    }
+
+    @RequestMapping(value = "/detail/{goodsId}")
+    public Result<GoodsDetailVo> toDetail(User user, @PathVariable("goodsId") long id) {
+        GoodsVo goods = goodsService.getGoodsVoByGoodsId(id);
+        long startAt = goods.getStartDate().getTime();
+        long endAt = goods.getEndDate().getTime();
+        long now = System.currentTimeMillis();
+        int spikeStatus;
+        int remainSeconds;
+        //秒杀还没开始，倒计时
+        if (now < startAt) {
+            spikeStatus = 0;
+            remainSeconds = (int) ((startAt - now) / 1000);
+            //秒杀已经结束
+        } else if (now > endAt) {
+            spikeStatus = 2;
+            remainSeconds = -1;
+        } else {//秒杀进行中
+            spikeStatus = 1;
+            remainSeconds = 0;
+        }
+        GoodsDetailVo vo = new GoodsDetailVo();
+        vo.setGoods(goods);
+        vo.setRemainSeconds(remainSeconds);
+        vo.setSpikeStatus(spikeStatus);
+        vo.setUser(user);
+        return Result.success(vo);
     }
 
 }

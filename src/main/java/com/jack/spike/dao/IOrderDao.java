@@ -10,8 +10,8 @@ import org.apache.ibatis.annotations.*;
  */
 @Mapper
 public interface IOrderDao {
-    @Select("select id from orderInfo where user_id = #{userId} and goods_id = #{goodsId}")
-    OrderInfo getOrderInfoByUserIdAndGoodsId(@Param("userId") long userId, @Param("goodsId") long goodsId);
+    @Select("select id from spike_order where user_id = #{userId} and goods_id = #{goodsId}")
+    SpikeOrder getSpikeOrderByUserIdAndGoodsId(@Param("userId") long userId, @Param("goodsId") long goodsId);
 
     @Insert("insert into orderInfo(user_id, goods_id, goods_name, goods_count, goods_price, order_channel, status, create_date)values("
             + "#{userId}, #{goodsId}, #{goodsName}, #{goodsCount}, #{goodsPrice}, #{orderChannel},#{status},#{createDate} )")
@@ -20,4 +20,7 @@ public interface IOrderDao {
 
     @Insert("insert into spike_order (user_id, goods_id, order_id)values(#{userId}, #{goodsId}, #{orderId})")
     int insertSpikeOrderInfo(SpikeOrder spikeOrder);
+
+    @Select("select * from orderInfo where id = #{orderId}")
+    OrderInfo getOrderInfoByOrderId(@Param("orderId") long orderId);
 }
