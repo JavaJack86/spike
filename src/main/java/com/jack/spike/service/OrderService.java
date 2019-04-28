@@ -47,11 +47,11 @@ public class OrderService {
         orderInfo.setOrderChannel(1);
         orderInfo.setStatus(0);
         orderInfo.setUserId(user.getId());
-        long orderId = orderDao.insertOrderInfo(orderInfo);
+        orderDao.insertOrderInfo(orderInfo);
         SpikeOrder spikeOrder = new SpikeOrder();
         spikeOrder.setGoodsId(goods.getId());
         spikeOrder.setUserId(user.getId());
-        spikeOrder.setOrderId(orderId);
+        spikeOrder.setOrderId(orderInfo.getId());
         orderDao.insertSpikeOrderInfo(spikeOrder);
         redisService.set(OrderKey.getSpikeOrderByUidGid, "" + user.getId() + "_" + goods.getId(), spikeOrder);
         return orderInfo;

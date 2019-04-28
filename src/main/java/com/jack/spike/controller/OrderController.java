@@ -1,6 +1,5 @@
 package com.jack.spike.controller;
 
-import com.jack.spike.model.Goods;
 import com.jack.spike.model.OrderInfo;
 import com.jack.spike.model.User;
 import com.jack.spike.result.CodeMsg;
@@ -10,7 +9,6 @@ import com.jack.spike.service.OrderService;
 import com.jack.spike.vo.GoodsVo;
 import com.jack.spike.vo.OrderDetailVo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;

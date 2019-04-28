@@ -1,20 +1,25 @@
 package com.jack.spike.controller;
 
-import com.jack.spike.model.OrderInfo;
 import com.jack.spike.model.SpikeOrder;
 import com.jack.spike.model.User;
+import com.jack.spike.rabbitmq.MQSender;
+import com.jack.spike.rabbitmq.SpikeMessage;
+import com.jack.spike.redis.GoodsKey;
+import com.jack.spike.redis.RedisService;
 import com.jack.spike.result.CodeMsg;
 import com.jack.spike.result.Result;
 import com.jack.spike.service.GoodsService;
 import com.jack.spike.service.OrderService;
 import com.jack.spike.service.SpikeService;
 import com.jack.spike.vo.GoodsVo;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @Author Jack
@@ -22,38 +27,73 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/spike")
-public class SpikeController {
-
+public class SpikeController implements InitializingBean {
 
     @Autowired
     private GoodsService goodsService;
-
-    @Autowired
-    private OrderService orderService;
-
     @Autowired
     private SpikeService spikeService;
+    @Autowired
+    private RedisService redisService;
+    @Autowired
+    private OrderService orderService;
+    @Autowired
+    private MQSender mqSender;
 
+    private Map<Long, Boolean> localOverMap = new HashMap<>();
+
+    /**
+     * 系统初始化后调用
+     *
+     * @throws Exception
+     */
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        List<GoodsVo> goodsVoList = goodsService.getGoodsVoList();
+        if (goodsVoList == null) {
+            return;
+        }
+        for (GoodsVo goodsVo : goodsVoList) {
+            redisService.set(GoodsKey.spikeGoodsStock, "" + goodsVo.getId(), goodsVo.getStockCount());
+            localOverMap.put(goodsVo.getId(), false);
+        }
+    }
+
+    /**
+     * @return orderId ; 成功
+     * -1 : 秒杀失败
+     * 0 ： 排队中
+     */
+    @GetMapping("/result")
+    public Result<Long> result(User user, @RequestParam("goodsId") long goodsId) {
+        long result = spikeService.getSpikeResult(user.getId(), goodsId);
+        return Result.success(result);
+    }
 
     @PostMapping("/do_spike")
-    public Result<OrderInfo> doSpike(Model model, User user, @RequestParam("goodsId") long goodsId) {
+    public Result<Integer> doSpike(Model model, User user, @RequestParam("goodsId") long goodsId) {
+        model.addAttribute("user", user);
         if (user == null) {
             return Result.error(CodeMsg.SESSION_ERROR);
         }
-        model.addAttribute("user", user);
-        GoodsVo goods = goodsService.getGoodsVoByGoodsId(goodsId);
-        Integer stockCount = goods.getStockCount();
-        if (stockCount <= 0) {
-            model.addAttribute("errMsg", CodeMsg.SPIKE_OVER.getMsg());
+        boolean ret = localOverMap.get(goodsId);
+        if (ret) {
+            return Result.error(CodeMsg.SPIKE_OVER);
+        }
+        long stockCount = redisService.decr(GoodsKey.spikeGoodsStock, "" + goodsId);
+        if (stockCount < 0) {
+            localOverMap.put(goodsId, true);
             return Result.error(CodeMsg.SPIKE_OVER);
         }
         SpikeOrder isExist = orderService.getSpikeOrderByUserIdAndGoodsId(user.getId(), goodsId);
         if (isExist != null) {
-            model.addAttribute("errMsg", CodeMsg.SPIKE_RAPEATE.getMsg());
             return Result.error(CodeMsg.SPIKE_RAPEATE);
         }
-        OrderInfo orderInfo = spikeService.setSpikeOrderAndOrder(user, goods);
-        return Result.success(orderInfo);
+        SpikeMessage spikeMessage = new SpikeMessage();
+        spikeMessage.setGoodsId(goodsId);
+        spikeMessage.setUser(user);
+        mqSender.sendSpikeMessage(spikeMessage);
+        //排队中
+        return Result.success(0);
     }
-
 }

@@ -27,10 +27,10 @@ public class GoodsService {
         return goodsDao.getGoodsVoByGoodsId(id);
     }
 
-    public int reduceStock(GoodsVo goods) {
+    public boolean reduceStock(GoodsVo goods) {
         SpikeGoods spikeGoods = new SpikeGoods();
         spikeGoods.setGoodsId(goods.getId());
         spikeGoods.setStockCount(goods.getStockCount() - 1);
-        return goodsDao.reduceStock(spikeGoods);
+        return goodsDao.reduceStock(spikeGoods) > 0;
     }
 }

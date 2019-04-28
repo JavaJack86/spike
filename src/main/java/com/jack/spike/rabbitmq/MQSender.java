@@ -19,9 +19,9 @@ public class MQSender {
 
     private static Logger log = LoggerFactory.getLogger(MQReceiver.class);
 
-    public void send(Object message) {
-        String msg = RedisService.beanToString(message);
-        log.info("send:" + msg);
-        amqpTemplate.convertAndSend(MQConfig.QUEUE, msg);
+    public void sendSpikeMessage(SpikeMessage spikeMessage) {
+        String msg = RedisService.beanToString(spikeMessage);
+        log.info("sendSpikeMessage:" + msg);
+        amqpTemplate.convertAndSend(MQConfig.SPIKE_QUEUE, msg);
     }
 }
