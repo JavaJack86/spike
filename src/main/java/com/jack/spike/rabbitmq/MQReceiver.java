@@ -1,11 +1,8 @@
 package com.jack.spike.rabbitmq;
 
-import com.jack.spike.model.OrderInfo;
 import com.jack.spike.model.SpikeOrder;
 import com.jack.spike.model.User;
 import com.jack.spike.redis.RedisService;
-import com.jack.spike.result.CodeMsg;
-import com.jack.spike.result.Result;
 import com.jack.spike.service.GoodsService;
 import com.jack.spike.service.OrderService;
 import com.jack.spike.service.SpikeService;

@@ -68,7 +68,8 @@
                         <img id="verifyCodeImg" width="80" height="32" style="display:none"
                              onclick="refreshVerifyCode()"/>
                         <input id="verifyCode" class="form-control" style="display:none"/>
-                        <button class="btn btn-primary" type="button" id="buyButton" onclick="doSpike()">立即秒杀</button>
+                        <button class="btn btn-primary" type="button" id="buyButton" onclick="doSpikePath()">立即秒杀
+                        </button>
                     </div>
                 </div>
                 <input type="hidden" name="goodsId" id="goodsId"/>
@@ -91,9 +92,33 @@
 </body>
 <script>
 
-    function doSpike() {
+    function doSpikePath() {
+        var goodsId = $("#goodsId").val();
+        g_showLoading();
         $.ajax({
-            url: "/spike/do_spike",
+            url: "/spike/path",
+            type: "GET",
+            data: {
+                goodsId: goodsId
+            },
+            success: function (data) {
+                if (data.code == 0) {
+                    var path = data.data;
+                    doSpike(path);
+                } else {
+                    layer.msg(data.msg);
+                }
+            },
+            error: function () {
+                layer.msg("客户端请求有误");
+            }
+        });
+
+    }
+
+    function doSpike(path) {
+        $.ajax({
+            url: "/spike/" + path + "/do_spike",
             type: "POST",
             data: {
                 goodsId: $("#goodsId").val()
@@ -129,7 +154,7 @@
                     } else if (result == 0) {
                         setTimeout(function () {
                             getSpikeResult(goodsId);
-                        }, 50);
+                        }, 200);
                     } else {
                         layer.confirm("恭喜你，秒杀成功！查看订单？", {btn: ["确定", "取消"]},
                             function () {
@@ -140,8 +165,6 @@
                             }
                         );
                     }
-
-
                 } else {
                     layer.msg(data.msg);
                 }

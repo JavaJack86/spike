@@ -5,6 +5,8 @@ import com.jack.spike.model.SpikeOrder;
 import com.jack.spike.model.User;
 import com.jack.spike.redis.RedisService;
 import com.jack.spike.redis.SpikeOrderKey;
+import com.jack.spike.util.MD5Util;
+import com.jack.spike.util.UUIDUtil;
 import com.jack.spike.vo.GoodsVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -58,4 +60,17 @@ public class SpikeService {
     }
 
 
+    public boolean checkPath(String path, Long userId, Long goodsId) {
+        if (userId == null || path == null) {
+            return false;
+        }
+        String pathOld = redisService.get(SpikeOrderKey.getSpikePath, "" + userId + "_" + goodsId, String.class);
+        return pathOld.equals(path);
+    }
+
+    public String createSpikePath(Long userId, Long goodsId) {
+        String strUUID = MD5Util.md5(UUIDUtil.uuid() + "123456");
+        redisService.set(SpikeOrderKey.getSpikePath, "" + userId + "_" + goodsId, strUUID);
+        return strUUID;
+    }
 }

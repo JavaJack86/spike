@@ -6,9 +6,10 @@ package com.jack.spike.redis;
  */
 public class SpikeOrderKey extends BasePrefix {
 
-    private SpikeOrderKey(String prefix) {
-        super(prefix);
+    private SpikeOrderKey(int expireSeconds, String prefix) {
+        super(expireSeconds, prefix);
     }
 
-    public static SpikeOrderKey goodsOver = new SpikeOrderKey("go");
+    public static SpikeOrderKey goodsOver = new SpikeOrderKey(0, "go");
+    public static SpikeOrderKey getSpikePath = new SpikeOrderKey(60, "sp");
 }

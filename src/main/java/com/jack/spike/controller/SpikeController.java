@@ -6,11 +6,14 @@ import com.jack.spike.rabbitmq.MQSender;
 import com.jack.spike.rabbitmq.SpikeMessage;
 import com.jack.spike.redis.GoodsKey;
 import com.jack.spike.redis.RedisService;
+import com.jack.spike.redis.SpikeOrderKey;
 import com.jack.spike.result.CodeMsg;
 import com.jack.spike.result.Result;
 import com.jack.spike.service.GoodsService;
 import com.jack.spike.service.OrderService;
 import com.jack.spike.service.SpikeService;
+import com.jack.spike.util.MD5Util;
+import com.jack.spike.util.UUIDUtil;
 import com.jack.spike.vo.GoodsVo;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,12 +73,17 @@ public class SpikeController implements InitializingBean {
         return Result.success(result);
     }
 
-    @PostMapping("/do_spike")
-    public Result<Integer> doSpike(Model model, User user, @RequestParam("goodsId") long goodsId) {
+    @PostMapping("/{path}/do_spike")
+    public Result<Integer> doSpike(Model model, User user, @RequestParam("goodsId") long goodsId ,@PathVariable String path) {
         model.addAttribute("user", user);
         if (user == null) {
             return Result.error(CodeMsg.SESSION_ERROR);
         }
+        boolean check = spikeService.checkPath(path,user.getId(),goodsId);
+        if (!check) {
+            return Result.error(CodeMsg.REQUEST_ILLEGAL);
+        }
+
         boolean ret = localOverMap.get(goodsId);
         if (ret) {
             return Result.error(CodeMsg.SPIKE_OVER);
@@ -96,4 +104,15 @@ public class SpikeController implements InitializingBean {
         //排队中
         return Result.success(0);
     }
+
+    @GetMapping("/path")
+    public Result<String> path(Model model, User user, @RequestParam("goodsId") long goodsId) {
+        model.addAttribute("user", user);
+        if (user == null) {
+            return Result.error(CodeMsg.SESSION_ERROR);
+        }
+       String path =  spikeService.createSpikePath(user.getId(),goodsId);
+        return Result.success(path);
+    }
+
 }
