@@ -58,43 +58,6 @@ public class GoodsController {
         return html;
     }
 
-    @RequestMapping(value = "/to_detail2/{goodsId}", produces = "text/html")
-    public String toDetail2(HttpServletRequest request, HttpServletResponse response, Model model, User user, @PathVariable("goodsId") long id) {
-        model.addAttribute("user", user);
-        String html = redisService.get(GoodsKey.goodsDetail, "" + id, String.class);
-        if (!StringUtils.isEmpty(html)) {
-            return html;
-        }
-        GoodsVo goods = goodsService.getGoodsVoByGoodsId(id);
-        model.addAttribute("goods", goods);
-        long startAt = goods.getStartDate().getTime();
-        long endAt = goods.getEndDate().getTime();
-        long now = System.currentTimeMillis();
-        int spikeStatus;
-        int remainSeconds;
-        //秒杀还没开始，倒计时
-        if (now < startAt) {
-            spikeStatus = 0;
-            remainSeconds = (int) ((startAt - now) / 1000);
-            //秒杀已经结束
-        } else if (now > endAt) {
-            spikeStatus = 2;
-            remainSeconds = -1;
-        } else {//秒杀进行中
-            spikeStatus = 1;
-            remainSeconds = 0;
-        }
-        model.addAttribute("spikeStatus", spikeStatus);
-        model.addAttribute("remainSeconds", remainSeconds);
-
-        SpringWebContext springWebContext = new SpringWebContext(request, response, request.getServletContext(), request.getLocale(), model.asMap(), applicationContext);
-        html = thymeleafViewResolver.getTemplateEngine().process("goodsDetail", springWebContext);
-        if (!StringUtils.isEmpty(html)) {
-            redisService.set(GoodsKey.goodsDetail, "" + id, html);
-        }
-        return html;
-    }
-
     @RequestMapping(value = "/detail/{goodsId}")
     public Result<GoodsDetailVo> toDetail(User user, @PathVariable("goodsId") long id) {
         GoodsVo goods = goodsService.getGoodsVoByGoodsId(id);

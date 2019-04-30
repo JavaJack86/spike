@@ -1,7 +1,10 @@
 package com.jack.spike.vo;
 
 import com.jack.spike.model.User;
-
+/**
+ * @Author Jack
+ * @Date 2019/4/25 13:03
+ */
 public class GoodsDetailVo {
     private int spikeStatus = 0;
     private int remainSeconds = 0;

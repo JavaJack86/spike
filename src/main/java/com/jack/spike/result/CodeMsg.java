@@ -12,6 +12,8 @@ public class CodeMsg {
     public static CodeMsg SERVER_ERROR = new CodeMsg(500100, "服务端异常");
     public static CodeMsg BIND_ERROR = new CodeMsg(500101, "参数校验异常：%s");
     public static CodeMsg REQUEST_ILLEGAL = new CodeMsg(500102, "非法请求");
+    public static CodeMsg VERIFY_CODE_ERROR = new CodeMsg(500103, "验证码错误");
+    public static CodeMsg ACCESS_LIMIT = new CodeMsg(500103, "请稍候再试");
     /**
      * 登录模块 5002XX
      */
@@ -28,7 +30,9 @@ public class CodeMsg {
     public static CodeMsg SPIKE_OVER = new CodeMsg(500401, "商品已经秒杀结束");
     //秒杀模块 5005XX
     public static CodeMsg Order_NOT_EXIST = new CodeMsg(500525, "订单不存在");
-    public static CodeMsg SPIKE_RAPEATE = new CodeMsg(500526, "不能重复秒杀该商品");
+    public static CodeMsg SPIKE_REPEATE = new CodeMsg(500526, "不能重复秒杀该商品");
+    public static CodeMsg SPIKE_FAIL = new CodeMsg(500502, "秒杀失败");
+
 
     private CodeMsg() {
     }

@@ -58,11 +58,6 @@
                 <span id="spikeTip"></span>
             </td>
             <td>
-                <!--
-                    <form id="spikeForm" method="post" action="/spike/do_spike">
-                        <button class="btn btn-primary btn-block" type="submit" id="buyButton">立即秒杀</button>
-                        <input type="hidden" name="goodsId"  id="goodsId" />
-                    </form>-->
                 <div class="row">
                     <div class="form-inline">
                         <img id="verifyCodeImg" width="80" height="32" style="display:none"
@@ -94,12 +89,18 @@
 
     function doSpikePath() {
         var goodsId = $("#goodsId").val();
+        var verifyCode = $("#verifyCode").val();
+        if (verifyCode == "") {
+            layer.msg("请输入验证码");
+            return false;
+        }
         g_showLoading();
         $.ajax({
             url: "/spike/path",
             type: "GET",
             data: {
-                goodsId: goodsId
+                goodsId: goodsId,
+                verifyCode: verifyCode
             },
             success: function (data) {
                 if (data.code == 0) {
@@ -125,10 +126,10 @@
             },
             success: function (data) {
                 if (data.code == 0) {
-                    //window.location.href = "/order_detail.htm?orderId=" + data.data.id;
                     getSpikeResult($("#goodsId").val());
                 } else {
                     layer.msg(data.msg);
+
                 }
             },
             error: function () {

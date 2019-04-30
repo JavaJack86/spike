@@ -1,25 +1,27 @@
 package com.jack.spike.controller;
 
+import com.jack.spike.config.AccessLimit;
 import com.jack.spike.model.SpikeOrder;
 import com.jack.spike.model.User;
 import com.jack.spike.rabbitmq.MQSender;
 import com.jack.spike.rabbitmq.SpikeMessage;
 import com.jack.spike.redis.GoodsKey;
 import com.jack.spike.redis.RedisService;
-import com.jack.spike.redis.SpikeOrderKey;
 import com.jack.spike.result.CodeMsg;
 import com.jack.spike.result.Result;
 import com.jack.spike.service.GoodsService;
 import com.jack.spike.service.OrderService;
 import com.jack.spike.service.SpikeService;
-import com.jack.spike.util.MD5Util;
-import com.jack.spike.util.UUIDUtil;
 import com.jack.spike.vo.GoodsVo;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +53,7 @@ public class SpikeController implements InitializingBean {
      * @throws Exception
      */
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         List<GoodsVo> goodsVoList = goodsService.getGoodsVoList();
         if (goodsVoList == null) {
             return;
@@ -67,6 +69,7 @@ public class SpikeController implements InitializingBean {
      * -1 : 秒杀失败
      * 0 ： 排队中
      */
+    @AccessLimit(seconds = 5, maxCount = 10)
     @GetMapping("/result")
     public Result<Long> result(User user, @RequestParam("goodsId") long goodsId) {
         long result = spikeService.getSpikeResult(user.getId(), goodsId);
@@ -74,12 +77,12 @@ public class SpikeController implements InitializingBean {
     }
 
     @PostMapping("/{path}/do_spike")
-    public Result<Integer> doSpike(Model model, User user, @RequestParam("goodsId") long goodsId ,@PathVariable String path) {
+    public Result<Integer> doSpike(Model model, User user, @RequestParam("goodsId") long goodsId, @PathVariable String path) {
         model.addAttribute("user", user);
         if (user == null) {
             return Result.error(CodeMsg.SESSION_ERROR);
         }
-        boolean check = spikeService.checkPath(path,user.getId(),goodsId);
+        boolean check = spikeService.checkPath(path, user.getId(), goodsId);
         if (!check) {
             return Result.error(CodeMsg.REQUEST_ILLEGAL);
         }
@@ -95,7 +98,7 @@ public class SpikeController implements InitializingBean {
         }
         SpikeOrder isExist = orderService.getSpikeOrderByUserIdAndGoodsId(user.getId(), goodsId);
         if (isExist != null) {
-            return Result.error(CodeMsg.SPIKE_RAPEATE);
+            return Result.error(CodeMsg.SPIKE_REPEATE);
         }
         SpikeMessage spikeMessage = new SpikeMessage();
         spikeMessage.setGoodsId(goodsId);
@@ -105,14 +108,38 @@ public class SpikeController implements InitializingBean {
         return Result.success(0);
     }
 
+    @AccessLimit(seconds = 5, maxCount = 5)
     @GetMapping("/path")
-    public Result<String> path(Model model, User user, @RequestParam("goodsId") long goodsId) {
-        model.addAttribute("user", user);
+    public Result<String> path(User user, @RequestParam("goodsId") long goodsId, @RequestParam("verifyCode") int verifyCode) {
         if (user == null) {
             return Result.error(CodeMsg.SESSION_ERROR);
         }
-       String path =  spikeService.createSpikePath(user.getId(),goodsId);
+        boolean checkCode = spikeService.checkVerifyCode(user, goodsId, verifyCode);
+        if (!checkCode) {
+            return Result.error(CodeMsg.VERIFY_CODE_ERROR);
+        }
+        String path = spikeService.createSpikePath(user.getId(), goodsId);
         return Result.success(path);
     }
+
+    @GetMapping("/verifyCode")
+    public Result<String> verifyCode(HttpServletResponse response,User user,
+                                     @RequestParam("goodsId")long goodsId) {
+        if (user == null) {
+            return Result.error(CodeMsg.SESSION_ERROR);
+        }
+        try {
+            BufferedImage image = spikeService.createVerityCode(user, goodsId);
+            OutputStream out = response.getOutputStream();
+            ImageIO.write(image, "JPEG", out);
+            out.flush();
+            out.close();
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error(CodeMsg.SPIKE_FAIL);
+        }
+    }
+
 
 }
